@@ -1,11 +1,29 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+// Prisma is optional — the site works without a database
+let prisma: ReturnType<typeof getPrisma> | null = null;
 
-export async function GET(request: Request) {
+function getPrisma() {
   try {
-    const employees = await prisma.employee.findMany({
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { PrismaClient } = require('@prisma/client');
+    return new PrismaClient();
+  } catch {
+    return null;
+  }
+}
+
+export async function GET() {
+  try {
+    if (!prisma) prisma = getPrisma();
+    if (!prisma) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "Database not configured. Please set up DATABASE_URL environment variable." 
+      }, { status: 503 });
+    }
+    
+    const employees = await (prisma as any).employee.findMany({
       select: {
         id: true,
         employeeNo: true,
@@ -26,10 +44,17 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    if (!prisma) prisma = getPrisma();
+    if (!prisma) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "Database not configured." 
+      }, { status: 503 });
+    }
+    
     const body = await request.json();
     
-    // In a real app, validate body using Zod before inserting
-    const newEmployee = await prisma.employee.create({
+    const newEmployee = await (prisma as any).employee.create({
       data: {
         fullName: body.fullName,
         idNumber: body.idNumber,

@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌿 Ceylon Green Life Plantation (PVT) LTD
 
-## Getting Started
+Official website for **Ceylon Green Life Plantation (PVT) LTD** — Sri Lanka's premier sustainable plantation company.
 
-First, run the development server:
+![Ceylon Green Life Logo](public/assets/logo.png)
+
+## 🌐 Live Site
+
+Deployed on Vercel: [Visit Website](https://ceylon-green-life-plantation-pvt-ltd.vercel.app)
+
+## ✨ Features
+
+- **Stunning Landing Page** with hero section, animated elements, and glassmorphism
+- **Responsive Design** — works perfectly on mobile, tablet, and desktop
+- **Smooth Animations** — scroll-triggered reveal effects, animated counters, floating particles
+- **Premium Design** — dark green/gold color palette with gradient text effects
+- **SEO Optimized** — proper meta tags, Open Graph data, semantic HTML
+- **Company Sections** — About, Services, Stats, Gallery, Contact form
+- **Employee Management System** — Dashboard at `/dashboard` (requires database)
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) + Custom CSS animations
+- **Language**: TypeScript
+- **Fonts**: Playfair Display + Inter (Google Fonts)
+- **Deployment**: Vercel
+
+## 🚀 Getting Started
 
 ```bash
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Build for production
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the website.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📁 Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/app/
+  ├── page.tsx          # Main landing page
+  ├── layout.tsx        # Root layout with SEO
+  ├── globals.css       # Design system & animations
+  ├── dashboard/        # Employee Management System
+  └── api/employees/    # API routes (requires DB)
+public/assets/
+  ├── logo.png          # Company logo
+  └── bg.jpg            # Hero background image
+```
 
-## Learn More
+## 📜 License
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+© 2026 Ceylon Green Life Plantation (PVT) LTD. All rights reserved.
