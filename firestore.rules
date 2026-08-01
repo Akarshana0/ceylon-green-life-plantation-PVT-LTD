@@ -47,7 +47,7 @@ service cloud.firestore {
     // js/main.js — edit both places, then re-publish this file.
     function isSuperAdmin() {
       return isSignedIn() && request.auth.token.email in [
-        'admin@cglp.lk'
+        'pansiluakarshana0@gmail.com'
       ];
     }
 
