@@ -31,7 +31,7 @@ cglp-app/
 
 ## 2. One-time Firebase setup (do this first)
 
-Your Firebase project (`ceylon-green-life-planta-ee32e`) is already wired into
+Your Firebase project (`ceylon-green-life-5e745`) is already wired into
 `js/firebase-config.js`. You just need to turn a few things **on** in the
 Firebase Console (console.firebase.google.com → select your project).
 
