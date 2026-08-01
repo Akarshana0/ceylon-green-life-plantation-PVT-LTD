@@ -1,329 +1,549 @@
-# Ceylon Green Life Plantation — Employee Management System
-### (Warakapola Metro — CGLP EMS)
+<!DOCTYPE html>
+<html lang="si">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ceylon Green Life Plantation | සේවක කළමනාකරණය</title>
+<meta name="description" content="Ceylon Green Life Plantation (Pvt) Ltd — Employee Management System">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
 
-සරලව: මේක සම්පූර්ණයෙන්ම Web browser එකෙන් access කරන්න පුළුවන් සේවක කළමනාකරණ පද්ධතියක්.
-Firebase (Google) එක backend එක විදිහට පාවිච්චි කරලා, GitHub Pages හරහා host කරන්න පුළුවන් විදිහට හදලා තියෙන්නේ.
-කිසිම server එකක් තමන්ම run කරන්න අවශ්‍ය නෑ — Firebase තමයි login, දත්ත ගබඩා කිරීම (Firestore) සහ ඡායාරූප ගබඩා කිරීම (Storage) බලාගන්නේ.
+<!-- ============================================================ -->
+<!-- LOGIN SCREEN -->
+<!-- ============================================================ -->
+<section id="screen-login" class="login-screen">
+  <div class="login-canopy" aria-hidden="true">
+    <canvas id="fireflyCanvas" class="firefly-canvas"></canvas>
+    <div class="light-shaft s1"></div>
+    <div class="light-shaft s2"></div>
+    <div class="light-shaft s3"></div>
+    <div class="leaf-field" id="leafField"></div>
+    <div class="ground-glow"></div>
+  </div>
 
-This is a static, browser-based Employee Management System for Ceylon Green Life
-Plantation (Pvt) Ltd. It uses **Firebase** (Authentication + Firestore + Storage)
-as its backend and is designed to be hosted for free on **GitHub Pages**. There is
-no server to run yourself.
+  <div class="login-card" id="loginCard">
+    <div class="login-card-border" aria-hidden="true"></div>
+    <div class="login-logo"><img src="assets/logo.png" alt="Ceylon Green Life Plantation logo"></div>
+    <div class="login-titles">
+      <p class="brand-en"><span class="reveal-word" style="--d:0">Ceylon</span> <span class="reveal-word" style="--d:1">Green</span> <span class="reveal-word" style="--d:2">Life</span> <span class="reveal-word" style="--d:3">Plantation</span></p>
+      <p class="brand-si">(පුද්ගලික) සමාගම</p>
+      <p class="brand-sub">Employee Management System</p>
+    </div>
 
----
+    <div id="loginError" class="login-error"></div>
 
-## 1. What's in this ZIP
+    <form id="loginForm" autocomplete="on">
+      <div class="field">
+        <label for="loginEmail">විද්‍යුත් තැපෑල <span class="si">/ Email</span></label>
+        <div class="input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18v12H3z"/><path d="M3 7l9 6 9-6"/></svg>
+          <input type="email" id="loginEmail" required placeholder="you@cglp.lk">
+        </div>
+      </div>
+      <div class="field">
+        <label for="loginPassword">මුරපදය <span class="si">/ Password</span></label>
+        <div class="input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+          <input type="password" id="loginPassword" required placeholder="••••••••">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+        පිවිසෙන්න <span style="opacity:.8; font-weight:500;">&nbsp;/ Sign in</span>
+      </button>
+    </form>
 
-```
-cglp-app/
-├── index.html          ← the entire app (login screen + dashboard)
-├── css/style.css        ← all styling
-├── js/
-│   ├── firebase-config.js   ← your Firebase project keys (already filled in)
-│   └── main.js               ← all app logic (auth, employees, export, etc.)
-├── assets/logo.png       ← your company logo, cleaned up (transparent background)
-├── firestore.rules       ← security rules to paste into Firebase Console
-├── storage.rules         ← security rules to paste into Firebase Console
-└── README.md             ← this file
-```
+    <p class="login-foot">
+      ගිණුමක් නැද්ද? <a href="#" id="goToSignup" class="link-accent">ලියාපදිංචි වන්න</a> <span class="si">/ Don't have an account? <a href="#" class="link-accent" id="goToSignup2">Sign up</a></span><br>
+      ගිණුම් ගැටළුවක් තිබේ නම් පද්ධති පරිපාලක අමතන්න.<br>Trouble signing in? Contact your system administrator.
+    </p>
+  </div>
+</section>
 
----
+<!-- ============================================================ -->
+<!-- SIGN UP SCREEN -->
+<!-- ============================================================ -->
+<section id="screen-signup" class="login-screen hidden">
+  <div class="login-card" id="signupCard">
+    <div class="login-card-border" aria-hidden="true"></div>
+    <div class="login-logo"><img src="assets/logo.png" alt="Ceylon Green Life Plantation logo"></div>
+    <div class="login-titles">
+      <p class="brand-en">Create Account</p>
+      <p class="brand-si">නව ගිණුමක් සඳහා ඉල්ලුම් කරන්න</p>
+      <p class="brand-sub">Sign-up request — requires admin approval</p>
+    </div>
 
-## 2. One-time Firebase setup (do this first)
+    <div id="signupError" class="login-error"></div>
+    <div id="signupSuccess" class="login-success hidden">
+      ඔබගේ ඉල්ලීම යවා ඇත! Admin අනුමත කරන තුරු රැඳී සිටින්න.<br>
+      <span class="si">Your request has been sent. Please wait for admin approval before signing in.</span>
+    </div>
 
-Your Firebase project (`ceylon-green-life-planta-ee32e`) is already wired into
-`js/firebase-config.js`. You just need to turn a few things **on** in the
-Firebase Console (console.firebase.google.com → select your project).
+    <form id="signupForm" autocomplete="on">
+      <div class="two-col">
+        <div class="field">
+          <label for="suFirstName">මුල් නම <span class="si">/ First Name</span></label>
+          <input type="text" id="suFirstName" required placeholder="Kamal">
+        </div>
+        <div class="field">
+          <label for="suLastName">වාසගම <span class="si">/ Last Name</span></label>
+          <input type="text" id="suLastName" required placeholder="Perera">
+        </div>
+      </div>
+      <div class="field">
+        <label for="suEmail">විද්‍යුත් තැපෑල <span class="si">/ Email</span></label>
+        <div class="input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18v12H3z"/><path d="M3 7l9 6 9-6"/></svg>
+          <input type="email" id="suEmail" required placeholder="you@cglp.lk">
+        </div>
+      </div>
+      <div class="field">
+        <label for="suPhone">දුරකථන අංකය <span class="si">/ Phone Number</span></label>
+        <div class="input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.9.32 1.79.6 2.65a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.43-1.43a2 2 0 012.11-.45c.86.28 1.75.48 2.65.6A2 2 0 0122 16.92z"/></svg>
+          <input type="tel" id="suPhone" required placeholder="07X XXX XXXX">
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="field">
+          <label for="suPassword">මුරපදය <span class="si">/ Password</span></label>
+          <div class="input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+            <input type="password" id="suPassword" required minlength="6" placeholder="••••••••">
+          </div>
+        </div>
+        <div class="field">
+          <label for="suPasswordConfirm">මුරපදය තහවුරු කරන්න <span class="si">/ Confirm Password</span></label>
+          <div class="input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+            <input type="password" id="suPasswordConfirm" required minlength="6" placeholder="••••••••">
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="signupBtn">
+        ඉල්ලීම යවන්න <span style="opacity:.8; font-weight:500;">&nbsp;/ Send request</span>
+      </button>
+    </form>
 
-### 2.1 Enable Email/Password sign-in
-1. **Build → Authentication → Get started**
-2. Under **Sign-in method**, enable **Email/Password**.
-3. Go to the **Users** tab → **Add user** → create the first login (e.g.
-   `admin@cglp.lk` + a strong password). Create one account per staff member
-   who needs access — everyone signs in with their own email + password.
+    <p class="login-foot">
+      දැනටමත් ගිණුමක් තිබේද? <a href="#" id="goToLogin" class="link-accent">පිවිසෙන්න</a> <span class="si">/ Already have an account? Sign in</span>
+    </p>
+  </div>
+</section>
 
-### 2.2 Create the Firestore Database
-1. **Build → Firestore Database → Create database**.
-2. Choose **Production mode**, pick a region close to Sri Lanka (e.g.
-   `asia-south1` or `asia-southeast1`), click **Enable**.
-3. Go to the **Rules** tab, delete what's there, and paste in the contents of
-   **`firestore.rules`** from this ZIP. Click **Publish**.
+<!-- Brief "growing leaf" transition shown between successful login and dashboard reveal -->
+<div class="launch-overlay hidden" id="launchOverlay" aria-hidden="true">
+  <svg viewBox="0 0 100 100" class="launch-sprout">
+    <path id="sproutStem" d="M50 90 C50 60 50 55 50 40" fill="none" stroke="#e9d29a" stroke-width="2.4" stroke-linecap="round"/>
+    <path id="sproutLeafL" d="M50 46 C34 44 28 34 30 22 C42 26 50 34 50 46 Z" fill="#2e8b57"/>
+    <path id="sproutLeafR" d="M50 40 C66 36 73 25 70 14 C57 20 50 29 50 40 Z" fill="#c8a24a"/>
+  </svg>
+  <div class="launch-text">සකසමින්... <span style="opacity:.7;">/ Preparing your workspace</span></div>
+</div>
 
-### 2.3 Enable Storage (for employee photos)
-1. **Build → Storage → Get started**, accept the defaults.
-2. Go to the **Rules** tab, delete what's there, and paste in the contents of
-   **`storage.rules`** from this ZIP. Click **Publish**.
+<!-- ============================================================ -->
+<!-- APP SCREEN -->
+<!-- ============================================================ -->
+<section id="screen-app" class="app-shell hidden">
 
-### 2.3.5 Set your Super Admin email (new — required for User Access page)
-The **User Access** page (sign-up approvals, seeing who's currently logged
-in, force-logout, granting self-edit) is now restricted to one or more
-whitelisted email addresses, separate from the `role: admin` field. Edit
-**both** of these to match your real admin email address before deploying:
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="assets/logo.png" alt="logo">
+      <div>
+        <div class="name-en">Ceylon Green Life</div>
+        <div class="name-si">Plantation (Pvt) Ltd</div>
+      </div>
+    </div>
 
-1. `js/main.js` — near the top, edit:
-   ```js
-   const SUPER_ADMIN_EMAILS = [
-     'admin@cglp.lk'   // ← change this to your real email
-   ];
-   ```
-2. `firestore.rules` — inside `function isSuperAdmin()`, edit the same list:
-   ```
-   function isSuperAdmin() {
-     return isSignedIn() && request.auth.token.email in [
-       'admin@cglp.lk'   // ← must match main.js exactly
-     ];
-   }
-   ```
-   Re-publish `firestore.rules` in the Firebase Console after editing.
+    <nav class="nav" id="navList">
+      <div class="nav-pill" id="navPill" aria-hidden="true"></div>
+      <div class="nav-item active" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        <span>මුල් පිටුව <span class="si">Dashboard</span></span>
+      </div>
+      <div class="nav-item" data-view="employees">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        <span>සේවකයන් <span class="si">Employees</span></span>
+      </div>
+      <div class="nav-item" data-view="add-employee">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
+        <span>නව සේවකයෙක් <span class="si">Add Employee</span></span>
+      </div>
+      <div class="nav-item" data-view="export">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        <span>Export <span class="si">Excel</span></span>
+      </div>
+      <div class="nav-item" data-view="my-profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>මගේ ගිණුම <span class="si">My Profile</span></span>
+      </div>
+      <div class="nav-item super-admin-only hidden" data-view="users">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/><path d="M12 1v2M12 19v2M1 12h2M19 12h2"/></svg>
+        <span>පරිශීලක පාලනය <span class="si">User Access</span></span>
+        <span class="nav-badge hidden" id="pendingBadge">0</span>
+      </div>
+    </nav>
 
-Only accounts signed in with one of these exact emails will ever see the
-"User Access" item in the sidebar or be able to approve sign-ups, disable
-accounts, force someone to log out, etc. — even another account promoted to
-`role: admin` (which only unlocks employee bank-detail access) won't be able
-to open this page.
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <div class="user-avatar" id="userInitial">?</div>
+        <div class="user-meta">
+          <div class="u-name" id="userNameLabel">—</div>
+          <div class="u-role" id="userRoleLabel">—</div>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-block btn-sm" id="logoutBtn" style="border-color:rgba(233,210,154,.5); color:var(--gold-300);">
+        ඉවත් වන්න <span style="opacity:.8;">/ Logout</span>
+      </button>
+    </div>
+  </aside>
 
-### 2.4 Make your first Admin (one-time, manual)
-The very first time someone signs in, the app automatically creates a profile
-document for them in Firestore under `users/{their-uid}` with `role: "staff"`.
-To make **that one person** your first Admin:
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="menu-toggle icon-btn" id="menuToggle" aria-label="Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+        <div>
+          <h1 id="viewTitle">මුල් පිටුව</h1>
+          <div class="sub" id="viewSubtitle">Dashboard overview</div>
+        </div>
+      </div>
+    </div>
 
-1. **Build → Firestore Database → Data** tab.
-2. Sign in to the app once with that person's account (so their `users` doc
-   gets created).
-3. Find the document under the `users` collection (its ID is a long random
-   string — the Auth UID). Open it.
-4. Change the `role` field from `staff` to `admin`. Save.
-5. Refresh the app — that account now has full Admin access, including a
-   **User Access** page in the sidebar.
+    <div class="content">
 
-After that, **you never need to touch the Firebase Console again to add
-people.** From the User Access page, an Admin can create brand-new login
-accounts (name, email, password, role) directly from inside the site —
-nobody can sign up on their own; only an Admin can hand out access. Existing
-users can also be promoted/demoted between Staff and Admin from the same
-page with one click.
+      <!-- DASHBOARD VIEW -->
+      <div class="view" id="view-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">මුළු සේවක සංඛ්‍යාව <span style="display:block;">Total Employees</span></div>
+            <div class="stat-value" id="statTotal">0</div>
+          </div>
+          <div class="stat-card gold">
+            <div class="stat-label">ශාඛා <span style="display:block;">Branches</span></div>
+            <div class="stat-value" id="statBranches">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">නවතම එකතු කිරීම් (මාසය) <span style="display:block;">Added this month</span></div>
+            <div class="stat-value" id="statNew">0</div>
+          </div>
+          <div class="stat-card gold">
+            <div class="stat-label">ඡායාරූප රහිත <span style="display:block;">Missing Photos</span></div>
+            <div class="stat-value" id="statNoPhoto">0</div>
+          </div>
+        </div>
 
----
+        <div class="panel">
+          <div class="panel-head">
+            <h2>මෙම මාසයේ සැමරුම් <span class="si">Celebrations this month</span></h2>
+          </div>
+          <div id="celebrationsList" class="table-wrap"></div>
+        </div>
 
-## 3. Deploying to GitHub Pages
+        <div class="panel admin-only hidden">
+          <div class="panel-head">
+            <h2>තනතුරු අනුව බෙදීම <span class="si">By Designation</span></h2>
+          </div>
+          <div id="designationBreakdown" class="table-wrap"></div>
+        </div>
+      </div>
 
-1. Create a new **GitHub repository** (e.g. `cglp-ems`), and upload the
-   **entire contents of this ZIP** (not the zip file itself — the files
-   inside it) to the root of the repo.
-2. In the repo, go to **Settings → Pages**.
-3. Under **Build and deployment**, set **Source** to `Deploy from a branch`,
-   branch `main`, folder `/ (root)`. Save.
-4. GitHub will give you a URL like `https://yourusername.github.io/cglp-ems/`.
-   Wait a minute or two for the first deploy.
+      <!-- EMPLOYEES VIEW -->
+      <div class="view hidden" id="view-employees">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>සියලුම සේවකයන් <span class="si">All Employees</span></h2>
+            </div>
+            <div class="toolbar">
+              <div class="search-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input type="text" id="searchInput" placeholder="නම, ID අංකය, ශාඛාව සොයන්න... / Search">
+              </div>
+              <select id="branchFilter" class="filter-select">
+                <option value="">සියලුම ශාඛා / All Branches</option>
+              </select>
+              <select id="designationFilter" class="filter-select admin-only hidden">
+                <option value="">සියලුම තනතුරු / All Designations</option>
+              </select>
+              <button class="btn btn-gold btn-sm" id="quickAddBtn">+ නව සේවකයෙක්</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>නම <span style="font-weight:400;">/ Name</span></th>
+                  <th>ID අංකය</th>
+                  <th>තනතුර</th>
+                  <th>ශාඛාව</th>
+                  <th>දුරකථනය</th>
+                  <th style="text-align:right;">ක්‍රියා</th>
+                </tr>
+              </thead>
+              <tbody id="employeeTableBody"></tbody>
+            </table>
+          </div>
+          <div id="employeesEmpty" class="empty-state hidden">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <p>තවම සේවකයන් එකතු කර නොමැත.<br>No employees yet — add your first one.</p>
+          </div>
+        </div>
+      </div>
 
-### 3.1 Authorize the domain in Firebase
-Firebase blocks sign-in from domains it doesn't recognize, so:
-1. Firebase Console → **Authentication → Settings → Authorized domains**.
-2. Click **Add domain**, enter `yourusername.github.io` (no `https://`, no
-   trailing slash), Save.
+      <!-- ADD EMPLOYEE VIEW -->
+      <div class="view hidden" id="view-add-employee">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>නව සේවකයෙක් එකතු කරන්න <span class="si">Add New Employee</span></h2>
+          </div>
+          <form id="addEmployeeForm" class="form-grid"></form>
+        </div>
+      </div>
 
-That's it — visit your GitHub Pages URL and sign in.
+      <!-- EXPORT VIEW -->
+      <div class="view hidden" id="view-export">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Excel වෙත Export කරන්න <span class="si">Export to Excel</span></h2>
+          </div>
+          <p style="color:var(--ink-700); font-size:14px; max-width:60ch;">
+            පහත බොත්තම ඔබන්න, සියලුම සේවක දත්ත <code>WARAKAPOLA CGLP EMPLOYEE Details</code> format එකට ගැලපෙන ලෙස Excel (.xlsx) ගොනුවක් ලෙස බාගත වේ.
+          </p>
+          <button class="btn btn-primary" id="exportBtn" style="margin-top:10px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+            Excel ගොනුව බාගන්න / Download .xlsx
+          </button>
+        </div>
+      </div>
 
----
+      <!-- MY PROFILE VIEW -->
+      <div class="view hidden" id="view-my-profile">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>මගේ ගිණුම <span class="si">My Account</span></h2>
+          </div>
+          <div class="form-grid" style="max-width:520px;">
+            <div class="field">
+              <label>ඊමේල් <span class="si">/ Email</span></label>
+              <input type="text" id="myProfileEmail" disabled>
+            </div>
+            <div class="field">
+              <label>භූමිකාව <span class="si">/ Role</span></label>
+              <input type="text" id="myProfileRole" disabled>
+            </div>
+            <div class="field">
+              <label>සම්පූර්ණ නම <span class="si">/ Full Name</span></label>
+              <input type="text" id="myProfileName" disabled>
+            </div>
+            <div class="field">
+              <label>දුරකථන අංකය <span class="si">/ Phone Number</span></label>
+              <input type="tel" id="myProfilePhone" disabled>
+            </div>
+          </div>
+          <p id="myProfileLockedMsg" class="help-text" style="margin-top:6px;">
+            🔒 ඔබගේ ගිණුම වෙනස් කිරීමට Admin ඉඩ දී නොමැත. අවශ්‍ය නම් Admin අමතන්න.
+            <span class="si">/ Editing is locked. Ask your administrator to enable self-edit for your account.</span>
+          </p>
+          <div id="myProfileActions" class="hidden" style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
+            <button type="button" class="btn btn-primary" id="myProfileSaveBtn">සුරකින්න / Save Changes</button>
+          </div>
+        </div>
+      </div>
 
-## 4. Using the app
+      <!-- USERS / ADMIN VIEW -->
+      <div class="view hidden" id="view-users">
 
-- **Dashboard** — quick counts: total employees, branches, new this month,
-  employees missing a photo, and a breakdown by designation.
-- **Employees** — search, view, edit, or (Admin only) delete any employee.
-  Click the pencil icon on a row to open the edit screen.
-- **Add Employee** — a full form matching the columns from
-  `WARAKAPOLA CGLP EMPLOYEE Details FINAL Format.xlsx` (name, NIC, gender,
-  DOB, phone, email, address, join date, branch, reporting line), plus a
-  photo picker.
-- **Sensitive fields (Designation & Bank Details)** — always shown, but:
-  - **Staff** see them masked (e.g. `****4865`) and cannot edit them.
-  - **Admin** see them in full, but must click **🔓 Unlock to edit** and
-    re-enter their password before the fields become editable. This means
-    even an Admin who steps away from an unlocked screen for a moment is
-    still protected — the unlock only applies to that one form session.
-- **Export** — one click downloads a fresh `.xlsx` with every employee, using
-  the exact same column headers as your original Excel format, so it can
-  replace your current spreadsheet workflow entirely.
-- **My Profile** *(new)* — every signed-in user has a "My Profile" page
-  showing their email, role, name, and phone. It's read-only by default;
-  once a Super Admin flips **Allow self-edit** for that account (from
-  User Access → Online Now or All Users), the name/phone fields unlock
-  and the person can update them directly — this is what "Allow self-edit"
-  actually powers now.
-- **Sign Up** *(new)* — anyone can now request an account from a public
-  "Sign Up" link on the login screen (first name, last name, email, phone,
-  password + confirm password). This just files a **pending request** — the
-  new account **cannot sign in** until a Super Admin approves it. Trying to
-  sign in while pending (or after being rejected/disabled) shows a clear
-  message instead of letting them in.
+        <div class="admin-tabs" id="adminTabs">
+          <button class="admin-tab active" data-tab="requests">
+            ඉල්ලීම් <span class="si">/ Requests</span> <span class="tab-count hidden" id="tabCountRequests">0</span>
+          </button>
+          <button class="admin-tab" data-tab="online">
+            දැන් සිටින අය <span class="si">/ Online Now</span> <span class="tab-count hidden" id="tabCountOnline">0</span>
+          </button>
+          <button class="admin-tab" data-tab="all">
+            සියලුම පරිශීලකයන් <span class="si">/ All Users</span>
+          </button>
+          <button class="admin-tab" data-tab="add">
+            + නව ගිණුමක් <span class="si">/ Add User</span>
+          </button>
+        </div>
 
-- **User Access** *(Super Admin only — see 2.3.5 above)* — four tabs:
-  - **Requests** — everyone who signed up and is waiting for approval.
-    ✅ Approve lets them sign in immediately; ✕ Reject blocks that account
-    permanently (they'd need to sign up again with a different attempt).
-  - **Online Now** — everyone currently signed into the site right now
-    (a green dot + "last active" time), separate from everyone else. From
-    here you can **Force logout** a session, or flip **Allow self-edit**
-    so that person can update their own name/phone from their account.
-  - **All Users** — every account ever created, with a search box (name /
-    email / phone), online/offline status, promote/demote Staff ↔ Admin,
-    Enable/Disable, Allow/Revoke self-edit, Force logout, and a trash icon
-    to remove an account's access to the site entirely.
-  - **Add User** — create brand-new, pre-approved login accounts right from
-    this page (name, email, password, role — no Firebase Console needed).
+        <!-- REQUESTS TAB -->
+        <div class="admin-tab-panel" id="tab-requests">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>ලියාපදිංචි ඉල්ලීම් <span class="si">Pending Sign-up Requests</span></h2>
+              </div>
+            </div>
+            <p style="font-size:13px; color:var(--ink-500); margin-bottom:14px;">
+              පහත ලැයිස්තුවේ අය සයිට් එකේ Sign Up පිටුවෙන් ගිණුමක් ඉල්ලා ඇත. ඔබ අනුමත කරන තුරු ඔවුන්ට ලොග් වෙන්න බෑ.
+            </p>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>නම / Name</th><th>Email</th><th>දුරකථනය / Phone</th><th>ඉල්ලූ දිනය / Requested</th><th style="text-align:right;">ක්‍රියා</th></tr></thead>
+                <tbody id="requestsTableBody"></tbody>
+              </table>
+            </div>
+            <div id="requestsEmpty" class="empty-state hidden">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+              <p>අළුත් ඉල්ලීම් නැත.<br>No pending requests right now.</p>
+            </div>
+          </div>
+        </div>
 
-  ⚠️ **Note on "Force logout" and "Delete":** this is a static site with no
-  server, so there's no way to truly revoke a Firebase session instantly or
-  delete someone's login (that needs the Firebase Admin SDK / a Cloud
-  Function). "Force logout" works by signaling every open tab of that
-  account to sign itself out — it takes effect the moment their browser
-  next checks in (usually within a few seconds, since tabs check roughly
-  every 25s). "Delete" removes their profile so they can no longer use the
-  app, but their underlying Firebase Auth login technically still exists;
-  if you need it fully purged, do that once in Firebase Console →
-  Authentication → Users.
+        <!-- ONLINE TAB -->
+        <div class="admin-tab-panel hidden" id="tab-online">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>දැන් සයිට් එකේ ඉන්න අය <span class="si">Currently Logged-in Users</span></h2>
+              </div>
+              <div class="toolbar">
+                <div class="search-box">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                  <input type="text" id="onlineSearchInput" placeholder="නම හෝ Email සොයන්න... / Search">
+                </div>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th></th><th>නම / Name</th><th>Email</th><th>අවසන් ක්‍රියාකාරකම / Last active</th><th style="text-align:right;">ක්‍රියා</th></tr></thead>
+                <tbody id="onlineTableBody"></tbody>
+              </table>
+            </div>
+            <div id="onlineEmpty" class="empty-state hidden">
+              <p>දැනට කිසිවෙකු ලොග් වී නැත.<br>Nobody is currently logged in.</p>
+            </div>
+          </div>
+        </div>
 
-⚠️ Since this update, **re-publish `firestore.rules`** in Firebase Console →
-Firestore Database → Rules (it now supports self-signup requests, the
-Super Admin whitelist, and the `/presence` collection used for Online Now
-and Force Logout — none of which the old rules allowed).
+        <!-- ALL USERS TAB -->
+        <div class="admin-tab-panel hidden" id="tab-all">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>සියලුම පරිශීලකයන් <span class="si">All Users</span></h2>
+              </div>
+              <div class="toolbar">
+                <div class="search-box">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                  <input type="text" id="allUsersSearchInput" placeholder="නම, Email හෝ දුරකථනය සොයන්න... / Search">
+                </div>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th></th><th>නම / Name</th><th>Email</th><th>තත්ත්වය / Status</th><th>භූමිකාව / Role</th><th style="text-align:right;">ක්‍රියා</th></tr></thead>
+                <tbody id="usersTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
----
+        <!-- ADD USER TAB -->
+        <div class="admin-tab-panel hidden" id="tab-add">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>නව පරිශීලකයෙකු එකතු කරන්න <span class="si">Add New User</span></h2>
+              </div>
+            </div>
+            <p style="font-size:13px; color:var(--ink-500); margin-bottom:14px;">
+              මෙතනින් හදන ඕනෑම account එකකට ලබාදෙන ඊමේල් + මුරපදය එයාට කියන්න — ඒ ගිණුමෙන් සෘජුවම පද්ධතියට ලොග් වෙන්න පුළුවන් (අනුමත කිරීමකින් තොරව).
+            </p>
+            <form id="addUserForm" class="form-grid">
+              <div class="field">
+                <label>නම <span class="si">/ Name</span></label>
+                <input type="text" id="newUserName" placeholder="e.g. Kamal Perera" required>
+              </div>
+              <div class="field">
+                <label>ඊමේල් <span class="si">/ Email</span></label>
+                <input type="email" id="newUserEmail" placeholder="name@cglp.lk" required>
+              </div>
+              <div class="field">
+                <label>මුරපදය <span class="si">/ Password</span></label>
+                <div class="input-wrap" style="display:flex; gap:8px; align-items:center;">
+                  <input type="text" id="newUserPassword" placeholder="min 6 characters" required minlength="6" style="padding-left:14px;">
+                </div>
+                <button type="button" class="btn btn-ghost btn-sm" id="genPasswordBtn" style="margin-top:8px;">🎲 Generate password</button>
+              </div>
+              <div class="field">
+                <label>භූමිකාව <span class="si">/ Role</span></label>
+                <select id="newUserRole">
+                  <option value="staff">Staff (restricted)</option>
+                  <option value="admin">Admin (full access)</option>
+                </select>
+              </div>
+              <div class="span-2" style="display:flex; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary" id="addUserBtn">+ ගිණුම හදන්න / Create Account</button>
+              </div>
+            </form>
+          </div>
+        </div>
 
-## 5. Photos and your existing Excel files
+      </div>
 
-Uploading a photo for an employee no longer touches any spreadsheet — it goes
-straight to Firebase Storage and is linked to that employee's record. This is
-what solves the formatting problem you had in
-`Warakapola Metro 02 - N.N.W.I.Hemachandra.xlsx`, where inserting photos broke
-the layout: photos now live entirely outside the spreadsheet.
+    </div>
+  </div>
+</section>
 
-The **Export** button always produces a clean, consistently formatted `.xlsx`
-— no manual color-coding or formatting needed, since every record is entered
-through the same form.
+<!-- Employee add/edit modal -->
+<div class="modal-backdrop hidden" id="employeeModalBackdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h3 id="employeeModalTitle">සේවක විස්තර</h3>
+        <div class="si">Employee Details</div>
+      </div>
+      <button class="modal-close" id="employeeModalClose" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="employeeForm" class="form-grid"></form>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost btn-sm" id="employeeModalCancel">අවලංගු කරන්න / Cancel</button>
+      <button class="btn btn-primary btn-sm" id="employeeModalSave">සුරකින්න / Save</button>
+    </div>
+  </div>
+</div>
 
----
+<!-- Reauth (sensitive unlock) modal -->
+<div class="modal-backdrop hidden" id="reauthModalBackdrop">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-head">
+      <div>
+        <h3>ආරක්ෂිත තහවුරු කිරීම</h3>
+        <div class="si">Confirm it's you</div>
+      </div>
+      <button class="modal-close" id="reauthModalClose" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="reauth-note">බැංකු විස්තර / තනතුර සංස්කරණය කිරීමට ඔබගේ මුරපදය නැවත ඇතුළත් කරන්න.<br>Re-enter your password to edit bank details or designation.</p>
+      <div class="field">
+        <label for="reauthPassword">මුරපදය / Password</label>
+        <input type="password" id="reauthPassword" placeholder="••••••••">
+      </div>
+      <div id="reauthError" class="login-error"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost btn-sm" id="reauthCancel">Cancel</button>
+      <button class="btn btn-gold btn-sm" id="reauthConfirm">Unlock</button>
+    </div>
+  </div>
+</div>
 
-## 6. Testing locally before you deploy (optional)
+<div class="toast-stack" id="toastStack"></div>
 
-Because the app uses JavaScript modules, opening `index.html` directly by
-double-clicking it won't work in most browsers (it needs to be served over
-`http://`, not `file://`). To preview it on your own computer first:
-
-```bash
-# from inside the cglp-app folder
-python3 -m http.server 8080
-# then open http://localhost:8080 in your browser
-```
-
-(You'll also need to add `localhost` to Firebase's Authorized domains list
-temporarily if you want sign-in to work locally — see step 3.1.)
-
----
-
-## 6.5 Fixes in this build
-
-- **Excel export no longer leaks sensitive data.** Staff accounts (who
-  can't see Designation or Bank Details on screen) previously still got
-  those columns in full when they clicked Export — the download ignored
-  the on-screen masking. Export now matches what the signed-in user is
-  allowed to see.
-- **"Allow self-edit" now actually does something.** The User Access page
-  always had a toggle to let a specific person edit their own name/phone,
-  but there was no page for them to do it on. Added the **My Profile**
-  page described above.
-- **Employee photos no longer pile up in Storage.** Replacing or deleting
-  an employee's photo now removes the old file from Firebase Storage
-  instead of leaving it there forever.
-- **Dashboard "Branches" stat** no longer shows `1` when there are zero
-  employees in the system yet.
-
-### 6.6 Fixes in this build (latest)
-
-- **Sensitive-field unlock no longer survives navigation.** Unlocking
-  Designation/Bank Details on the **Add Employee** page and then switching
-  to another page and back used to leave those fields unlocked with no
-  password re-prompt. The unlock is now cleared the moment you leave the
-  page, exactly as the Edit modal already behaved.
-- **User Access actions no longer double-fire.** On the **User Access**
-  page, "Force logout" and "Allow/Revoke self-edit" appear in both the
-  "Online Now" and "All Users" tabs. Because both tables were re-rendered
-  from the same live data every ~25 seconds (each heartbeat), button click
-  handlers were being re-attached on top of existing ones instead of
-  replacing them — so after the page had been open a little while, one
-  click could silently fire the action twice (double toast, duplicate
-  write). Each table's buttons are now wired up independently, so this
-  can no longer happen.
-
-### 6.8 Security fix in this build — sensitive fields moved server-side
-
-Previously, Designation and the four bank/EPF fields were stored on the same
-`employees/{id}` document that every signed-in Staff account is allowed to
-read. The Staff-facing "masked" view (`•••• 4865`, `🔒 restricted`, etc.) was
-**UI-only** — Firestore has no field-level redaction, so anyone signed in as
-Staff could open browser DevTools (or just inspect the app's own in-memory
-data) and read every employee's real designation, bank name/branch, account
-number, and EPF number in full.
-
-These five fields now live in a separate `employees/{id}/private/data`
-document, and `firestore.rules` restricts that subcollection to Admin only.
-Staff accounts never even fetch it. **You must re-publish `firestore.rules`**
-after this update — the old rules don't define the `private` subcollection
-and existing sensitive data stored directly on `employees/{id}` won't be
-picked up until it's re-saved through the Add/Edit form by an Admin.
-
-- **Note for existing deployments:** if you already have employee records
-  with designation/bank data saved under the old structure, that data is
-  still sitting on the public `employees/{id}` doc (a bug fix can't move
-  data for you). Ask an Admin to open + re-save each employee record once
-  after deploying this build to migrate their sensitive fields into the new
-  private subdocument, then manually delete those fields from the old
-  location in the Firebase Console.
-
-### 6.7 New feature: Branch / Designation filters
-
-The **Employees** page now has filter dropdowns next to the search box:
-- **Branch filter** — visible to everyone, lists every branch currently in
-  use.
-- **Designation filter** — Admin only (Staff can't see designations at
-  all, so this dropdown stays hidden for them, matching the masked
-  Designation column).
-
-Both dropdowns combine with the existing text search, and remember your
-selection as new employees are added live.
-
-### 6.9 New feature: "Celebrations this month" on the Dashboard
-
-The Dashboard now shows a **Celebrations this month** panel — every employee
-whose birthday or work anniversary falls in the current calendar month,
-sorted by day, with the years of service shown for anniversaries. This uses
-only Date of Birth / Join Date / Name / Branch, none of which are sensitive
-fields, so both Staff and Admin see it.
-
-### 6.10 Other fixes in this build
-
-- **Dashboard "Branches" stat** could still show `1` even with employees in
-  the system, if none of them had a branch filled in yet (the earlier fix
-  only covered the zero-employees case). It now always shows the true
-  count of distinct branches.
-
----
-
-## 7. Roadmap (already designed for, not built yet)
-
-The data model and permission system leave room to add, without restructuring
-anything:
-- Employee self-registration workflow
-- Commission updates
-- Monthly target tracking
-- Annual report generation
-
----
-
-## 8. Support
-
-If something in Firebase Console doesn't match these steps exactly, Google
-periodically redesigns that UI — the core actions (enable Email/Password,
-create Firestore, paste Rules, enable Storage, add Authorized domain) will
-still exist, just possibly renamed or relocated a click away.
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
