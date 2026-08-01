@@ -1,0 +1,141 @@
+rules_version = '2';
+
+// ============================================================================
+// Ceylon Green Life Plantation — Firestore Security Rules
+//
+// HOW TO INSTALL:
+//   Firebase Console → Firestore Database → Rules tab → paste this file's
+//   contents over the existing rules → Publish.
+//
+// WHAT THIS ENFORCES:
+//   - Only signed-in users can read or write anything.
+//   - Any signed-in user (role "staff") can add/edit an employee's basic
+//     details (name, phone, address, etc.) but CANNOT set or change the
+//     sensitive fields: designation, bankName, bankBranch, accountNumber,
+//     epfNo. Those fields must be left blank / unchanged for a staff write
+//     to succeed.
+//   - Only a user whose /users/{uid} document has role == "admin" can
+//     create, change, or clear the sensitive fields, or delete an employee.
+//   - Anyone can submit a sign-up request (self-create a /users/{uid} doc),
+//     but it is always created as role:"staff", status:"pending" — it
+//     CANNOT sign in until a super admin approves it.
+//   - Only the whitelisted super-admin email(s) below (see isSuperAdmin())
+//     can approve/reject sign-ups, promote/demote roles, disable or delete
+//     accounts, force-log-out a session, or grant a user permission to
+//     edit their own profile. This is a separate, stricter check than
+//     role == "admin" — being promoted to "admin" only unlocks employee
+//     sensitive-field access, not the User Access admin page.
+//   - /presence/{uid} powers the "who's online now" list. Each signed-in
+//     user may update their OWN presence doc (heartbeat), but only a super
+//     admin may set forceLogoutAt on it (the client-side "kick" signal).
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // IMPORTANT: keep this list in sync with SUPER_ADMIN_EMAILS in
+    // js/main.js — edit both places, then re-publish this file.
+    function isSuperAdmin() {
+      return isSignedIn() && request.auth.token.email in [
+        'admin@cglp.lk'
+      ];
+    }
+
+    // ---------------------------------------------------------------------
+    // /users/{userId} — one profile doc per signed-in account, id = uid
+    // ---------------------------------------------------------------------
+    match /users/{userId} {
+      allow read: if isSignedIn();
+
+      // Two ways a /users/{uid} profile doc can be created:
+      //  1) A super admin creates it directly for a brand-new account
+      //     (any role, pre-approved) — powers the in-site "Add User" form.
+      //  2) A brand-new account creates its OWN profile the moment it signs
+      //     up on the public Sign Up page — but ONLY ever as role:"staff",
+      //     status:"pending", canEditProfile:false. It can never self-
+      //     approve, self-promote, or grant itself edit permission.
+      allow create: if isSuperAdmin()
+                    || (isSignedIn()
+                        && request.auth.uid == userId
+                        && request.resource.data.role == 'staff'
+                        && request.resource.data.status == 'pending'
+                        && request.resource.data.get('canEditProfile', false) == false);
+
+      // A super admin can edit any profile (approve/reject sign-ups,
+      // promote/demote, disable/enable, grant self-edit permission).
+      // A user may edit their OWN profile ONLY if an admin has switched
+      // canEditProfile on for them, and only as long as they don't touch
+      // role / status / canEditProfile themselves.
+      allow update: if isSuperAdmin()
+                    || (isSignedIn() && request.auth.uid == userId
+                        && resource.data.canEditProfile == true
+                        && request.resource.data.role == resource.data.role
+                        && request.resource.data.status == resource.data.status
+                        && request.resource.data.canEditProfile == resource.data.canEditProfile);
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // ---------------------------------------------------------------------
+    // /presence/{uid} — "who's online now" + force-logout signal
+    // ---------------------------------------------------------------------
+    match /presence/{uid} {
+      allow read: if isSignedIn();
+
+      // Owner's first heartbeat write: must not try to set forceLogoutAt.
+      allow create: if isSuperAdmin()
+                    || (isSignedIn() && request.auth.uid == uid
+                        && !('forceLogoutAt' in request.resource.data));
+
+      // Owner's later heartbeats: forceLogoutAt (if any) must stay
+      // untouched — only a super admin can set/clear it (the "kick").
+      allow update: if isSuperAdmin()
+                    || (isSignedIn() && request.auth.uid == uid
+                        && request.resource.data.forceLogoutAt == resource.data.get('forceLogoutAt', null));
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // Sensitive employee fields must never live on a document that Staff
+    // can read (Firestore has no field-level redaction — anything allowed
+    // by `allow read` on a doc is fully visible to that client, regardless
+    // of what the UI chooses to display). This checks that a write to the
+    // main /employees/{empId} doc never smuggles a sensitive key onto it.
+    function hasNoSensitiveKeys(data) {
+      return !('designation' in data) && !('bankName' in data) &&
+             !('bankBranch' in data) && !('accountNumber' in data) &&
+             !('epfNo' in data);
+    }
+
+    // ---------------------------------------------------------------------
+    // /employees/{empId} — non-sensitive fields only (name, NIC, phone,
+    // address, branch, photo, etc). Readable by every signed-in account.
+    // ---------------------------------------------------------------------
+    match /employees/{empId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && (isAdmin() || hasNoSensitiveKeys(request.resource.data));
+      allow update: if isSignedIn() && (isAdmin() || hasNoSensitiveKeys(request.resource.data));
+      allow delete: if isAdmin();
+
+      // -------------------------------------------------------------------
+      // /employees/{empId}/private/{docId} — designation, bank details,
+      // EPF number. Only ever readable by an Admin — this is what actually
+      // enforces the "Staff can't see sensitive fields" rule; the on-screen
+      // masking in main.js is just UX on top of this, not the boundary.
+      // -------------------------------------------------------------------
+      match /private/{docId} {
+        allow read, write: if isAdmin();
+      }
+    }
+  }
+}
